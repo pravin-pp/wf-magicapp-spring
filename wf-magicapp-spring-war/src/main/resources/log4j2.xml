@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	# The five logging levels used by Log are (in order): # 
+	# 1. DEBUG (the	least serious) 
+	# 2. INFO 
+	# 3. WARN 
+	# 4. ERROR 
+	# 5. FATAL (the most serious) 
+-->
+<Configuration status="INFO" monitorInterval="60">
+
+	<properties>
+		<property name="log-path">${sys:user.dir}/${log.path}</property>
+	</properties>
+
+	<!-- List of Appender use in Application -->
+	<Appenders>
+
+		<!-- Console Appender -->
+		<console name="Console" target="system_out">
+			<PatternLayout>
+				<pattern>%d{HH:mm:ss.SSS} [%t] [%-5level] [%logger{36}][%L] - %msg%n</pattern>
+			</PatternLayout>
+		</console>
+
+		<!-- Rolling File Appender - Per Day Roll over -->
+		<RollingFile name="RollingFile" 
+					 fileName="${log-path}/PSWebApp.log"
+					 filePattern="${log-path}/$${date:yyyy-MM}/PSWebApp-%d{yyyy-MM-dd}-%i.log">
+			<PatternLayout>
+				<pattern>%d{HH:mm:ss.SSS} [%t] %-5level [%logger{36}] [%L] - %msg%n</pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy interval="1" modulate="true" />
+			</Policies>
+		</RollingFile>
+
+	</Appenders>
+
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="Console" level="debug" />
+			<AppenderRef ref="RollingFile" level="info" />
+		</Root>
+		<Logger name="log4j.logger.org.springframework" level="debug" additivity="false">
+			<AppenderRef ref="Console" />
+			<AppenderRef ref="RollingFile" />
+		</Logger>
+	</Loggers>
+</Configuration>

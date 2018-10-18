@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+    
+    <definition name="login.tiles" template="/WEB-INF/pages/tiles/layout.jsp">
+        <put-attribute name="title" value="Welcome to PSWebApp Login" />
+        <put-attribute name="body" value="/WEB-INF/pages/auth/login.jsp" />
+    </definition>
+
+    <definition name="getrelationship.tiles" template="/WEB-INF/pages/tiles/layout.jsp">
+        <put-attribute name="title" value="Welcome to PSWebApp Login" />
+        <put-attribute name="body" value="/WEB-INF/pages/relationship/getRelationship.jsp" />
+    </definition>
+
+    <definition name="addrelationship.tiles" template="/WEB-INF/pages/tiles/layout.jsp">
+        <put-attribute name="title" value="Welcome to PSWebApp Login" />
+        <put-attribute name="body" value="/WEB-INF/pages/relationship/addRelationship.jsp" />
+    </definition>
+
+</tiles-definitions>

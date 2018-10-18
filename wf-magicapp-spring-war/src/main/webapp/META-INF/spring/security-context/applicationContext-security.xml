@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    
+    <context:component-scan base-package="com.pwebapp.security"></context:component-scan>
+    
+	<security:http pattern="/css/**" security="none"></security:http>
+	<security:http pattern="/js/**" security="none"></security:http>
+	<security:http pattern="/fonts/**" security="none"></security:http>
+	
+	<security:http auto-config="false" 
+	               use-expressions="true" 
+	               authentication-manager-ref="customAuthenticationManager" entry-point-ref="loginUrlAuthenticationEntryPoint">
+		
+		<security:custom-filter position="FORM_LOGIN_FILTER" ref="customUsernamePasswordAuthenticationFilter"/>
+				
+		<security:intercept-url pattern="/auth/login**"	access="hasRole('ROLE_ANONYMOUS')" />
+		<security:intercept-url pattern="/auth/logout**" access="hasRole('ROLE_ADMIN')" />
+		<security:intercept-url pattern="/user/**" access="hasRole('ROLE_ADMIN')" />
+		<security:intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" />
+<!-- 
+		<security:form-login login-page="/auth/login"
+			                 username-parameter="username" 
+			                 password-parameter="password"
+			                 login-processing-url="/auth/login" 
+			                 default-target-url="/user/index"
+			                 always-use-default-target="true" 
+			                 authentication-failure-url="/auth/login?login_error=1"
+			                 authentication-failure-handler-ref="customExpAuthFailureHandler" />
+ -->
+		<security:logout logout-url="/auth/logout" 
+			logout-success-url="/auth/login" 
+			delete-cookies="JSESSIONID"
+			invalidate-session="true" />
+
+		<security:csrf request-matcher-ref="csrfMatcher"/>
+	
+		<security:access-denied-handler ref="accessDeniedHandler" />
+
+		<security:headers>
+			<security:cache-control />
+			<security:frame-options policy="SAMEORIGIN" />
+		</security:headers>
+
+		<security:session-management
+			session-fixation-protection="migrateSession"
+			session-authentication-error-url="/auth/login?sessionInvalid"
+			invalid-session-url="/auth/login?sessionTimeOut" >
+			<security:concurrency-control 
+				error-if-maximum-exceeded="true" max-sessions="1" />
+		</security:session-management>
+		
+	</security:http>
+
+	<security:authentication-manager id="customAuthenticationManager" erase-credentials="true">
+		<security:authentication-provider ref="authenticationManagerUtil"></security:authentication-provider>
+	</security:authentication-manager>
+	
+	<bean id="customExpAuthFailureHandler" class="org.springframework.security.web.authentication.ExceptionMappingAuthenticationFailureHandler">
+		<property name="exceptionMappings">
+			<map>
+				<entry
+					key="org.springframework.security.authentication.BadCredentialsException"
+					value="/auth/login?login_error=1">
+				</entry>
+				<entry
+					key="org.springframework.security.core.userdetails.UsernameNotFoundException"
+					value="/auth/login?login_error=4">
+				</entry>
+				<entry key="org.springframework.security.authentication.LockedException"
+					value="/auth/login?login_error=2">
+				</entry>
+				<entry
+					key="org.springframework.security.authentication.DisabledException"
+					value="/auth/login?login_error=3">
+				</entry>
+				<entry
+					key="org.springframework.security.web.authentication.session.SessionAuthenticationException"
+					value="/auth/login?login_error=5">
+				</entry>
+				<entry
+					key="org.springframework.security.web.csrf.InvalidCsrfTokenException"
+					value="/auth/login?login_error=6">
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="csrfMatcher"
+		class="org.springframework.security.web.util.matcher.AndRequestMatcher">
+		<constructor-arg>
+			<list>
+				<value>#{T(org.springframework.security.web.csrf.CsrfFilter).DEFAULT_CSRF_MATCHER}</value>
+				<bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+					<constructor-arg>
+						<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+							<constructor-arg value="/auth/login" />
+						</bean>
+					</constructor-arg>
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="userDetailsService" class="com.pwebapp.security.userdetails.WebAppUserDetailsServiceImpl">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<bean id="authenticationManagerUtil" class="com.pwebapp.security.AuthenticationManagerUtil">
+	   <property name="userDetailsService" ref="userDetailsService"></property>
+	   <property name="hideUserNotFoundExceptions" value="true"></property>
+	</bean>
+	
+	<bean id="customUsernamePasswordAuthenticationFilter" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
+	   <property name="usernameParameter" value="username"></property>
+	   <property name="passwordParameter" value="password"></property>
+	   <property name="filterProcessesUrl" value="/auth/login"></property>
+	   <property name="authenticationFailureHandler" ref="customExpAuthFailureHandler"></property>
+	   <property name="authenticationSuccessHandler">
+	       <bean class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler">
+	           <property name="alwaysUseDefaultTargetUrl" value="true"></property>
+	           <property name="defaultTargetUrl" value="/user/index"></property>
+	       </bean>
+	   </property>
+	   <property name="authenticationManager" ref="customAuthenticationManager"></property>
+	   <property name="requiresAuthenticationRequestMatcher">
+	       <bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+	           <constructor-arg name="pattern" value="/auth/login"></constructor-arg>
+	           <constructor-arg name="httpMethod" value="POST"></constructor-arg>
+	       </bean>
+	   </property>
+	</bean>
+	
+	<bean id="loginUrlAuthenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+	   <constructor-arg name="loginFormUrl" value="/auth/login"></constructor-arg>
+	</bean>
+	
+	<!-- For intercept URL -->
+	
+</beans>
